@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vice City RP — Performance Optimized Edition</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Layar Loading -->
+  <div id="loadingScreen">
+    <div class="loader-box">
+      <div class="brand-badge">1S ONESTATE ENGINE</div>
+      <h1>VICE CITY RP</h1>
+      <p id="loadingText">Memuat kota, material PBR, karakter 3D, dan kendaraan...</p>
+      <div class="progress-bar"><div id="progressFill"></div></div>
+    </div>
+  </div>
+
+  <!-- HUD & Kontrol Semirip OneState RP -->
+  <div id="hud">
+    <!-- Kiri Atas: Minimap + Level + HP/Armor + Target -->
+    <div class="hud-top-left">
+      <div class="minimap-wrapper" id="minimapWrapper" title="Ketuk untuk buka Peta Kota OneState">
+        <canvas id="minimapCanvas" width="160" height="160"></canvas>
+        <div class="safezone-badge">🛡️</div>
+        <div class="level-ring"><span>7</span></div>
+        <div class="vitals-mini">
+          <div class="bar-hp"><span id="hpBar"></span></div>
+          <div class="bar-ar"><span id="arBar"></span></div>
+          <small id="hpText">100%</small>
+        </div>
+      </div>
+
+      <div class="target-card">
+        <div class="target-header">
+          <span class="pin-icon">📍</span>
+          <strong>TARGET</strong>
+        </div>
+        <p id="targetDesc">Pergi ke Bengkel Tuning dan pasang bagian tuning interior di kendaraanmu 0/1</p>
+      </div>
+    </div>
+
+    <!-- Kanan Atas: Menu Cepat + Saldo Uang -->
+    <div class="hud-top-right">
+      <div class="top-icons">
+        <button class="icon-btn" id="btnMapModal" title="Peta Kota OneState">🗺️</button>
+        <button class="icon-btn" id="btnSettings" title="Pengaturan Grafis">⚙️</button>
+        <button class="icon-btn" id="btnWeather" title="Ganti Waktu: Siang / Sore / Malam / Pagi">🌅</button>
+        <button class="icon-btn" id="btnSpawnCar" title="Panggil Mobil">🚗</button>
+        <button class="shop-btn" id="btnShop">🛒 TOKO</button>
+      </div>
+      <div class="money-row">
+        <span class="dollar-badge">$</span>
+        <span class="money-val" id="moneyVal">120 640</span>
+        <button class="plus-btn" id="btnAddMoney">+</button>
+      </div>
+    </div>
+
+    <!-- Kiri Bawah: Stack Menu Vertikal + Watermark 1S ONESTATE + Dual-Mode Joystick / Setir -->
+    <div class="hud-bottom-left">
+      <div class="quick-stack">
+        <button class="sq-btn" id="btnMenu" title="Peta & GPS">⊞</button>
+        <button class="sq-btn" id="btnWanted" title="Panggil Mobil Terdekat">★</button>
+        <button class="sq-btn" id="btnCam" title="Ganti Sudut Kamera">🎥</button>
+      </div>
+      <div class="watermark">
+        <strong>1S ONESTATE</strong>
+        <small id="serverClock">📶 19ms • WAKTU SERVER: 14:32:19</small>
+        <small id="fpsBadge">-- FPS</small>
+      </div>
+
+      <!-- Kontrol Kiri Mode Jalan Kaki (Analog Stick) -->
+      <div id="footLeftControl" class="left-pad">
+        <div id="joystickZone">
+          <div id="joystickBase">
+            <div id="joystickRing"></div>
+            <div id="joystickStick"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kontrol Kiri Mode Mengemudi Ala OneState (Tombol Belok Kiri / Kanan Responsif) -->
+      <div id="driveLeftControl" class="left-pad hidden">
+        <div class="steer-group">
+          <button class="os-drive-btn steer-btn" id="btnSteerLeft" aria-label="Belok Kiri">◀</button>
+          <button class="os-drive-btn steer-btn" id="btnSteerRight" aria-label="Belok Kanan">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tengah Bawah: Speedometer Digital Ala OneState -->
+    <div id="speedoBox" class="hidden">
+      <div class="speed-num" id="speedVal">0</div>
+      <div class="speed-unit">KM/H • <span id="gearVal">D</span></div>
+    </div>
+
+    <!-- Kanan Bawah: Kontrol Aksi OneState (Berubah Otomatis Saat Jalan Kaki vs Mengemudi) -->
+    <div class="hud-bottom-right">
+      <!-- Tombol Pintu Masuk/Keluar Mobil (Selalu Muncul Saat Dekat Mobil atau Sedang Mengemudi) -->
+      <button class="os-circle-btn door-btn" id="btnDoor" title="Masuk / Keluar Mobil">🚘</button>
+
+      <!-- Mode Jalan Kaki Ala OneState -->
+      <div id="footRightControl">
+        <button class="os-circle-btn sub-top" id="btnJump" title="Lompat">⬆️</button>
+        <button class="os-circle-btn sub-mid" id="btnCrouch" title="Jongkok / Mode Taktis">🧎</button>
+        <button class="os-circle-btn main-action" id="btnPunch" title="Pukul / Interaksi">✊</button>
+        <button class="os-circle-btn sub-bot" id="btnSprint" title="Tahan untuk Lari Cepat (Sprint)">🏃</button>
+      </div>
+
+      <!-- Mode Mengemudi Ala OneState (Pedal Gas Besar, Rem/Mundur, Rem Tangan/Drift, Klakson) -->
+      <div id="driveRightControl" class="hidden">
+        <button class="os-circle-btn sub-top" id="btnHorn" title="Klakson">📯</button>
+        <button class="os-circle-btn sub-mid" id="btnNitro" title="Nitro Boost">🔥</button>
+        <button class="os-pedal-btn gas-btn" id="btnGas" title="Gas">
+          <span class="pedal-icon">▲</span>
+          <small>GAS</small>
+        </button>
+        <button class="os-pedal-btn brake-btn" id="btnBrake" title="Rem / Mundur">
+          <span class="pedal-icon">▼</span>
+          <small>REM</small>
+        </button>
+        <button class="os-circle-btn sub-bot" id="btnHandbrake" title="Rem Tangan / Drift">🅿️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Peta Interaktif Ala OneState -->
+  <div id="mapModal" class="map-modal hidden">
+    <div class="map-card">
+      <div class="map-header">
+        <div>
+          <h3>PETA KOTA ONESTATE</h3>
+          <small>Ketuk titik di peta atau pilih lokasi untuk GPS & Teleport cepat</small>
+        </div>
+        <button id="btnCloseMap" class="map-close">✕</button>
+      </div>
+      <div class="map-body">
+        <canvas id="fullMapCanvas" width="600" height="420"></canvas>
+        <div class="map-sidebar">
+          <div id="selectedPoiInfo" class="poi-box">
+            <strong>Pilih Lokasi di Peta</strong>
+            <p>Ketuk ikon lokasi atau pilih dari daftar di bawah.</p>
+          </div>
+          <div id="poiList" class="poi-list"></div>
+          <div class="map-actions">
+            <button id="btnSetWaypoint" class="map-btn primary">📍 Pasang GPS</button>
+            <button id="btnTeleportPoi" class="map-btn">⚡ Teleport</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Panel Pengaturan Grafis -->
+  <div id="settingsModal" class="map-modal hidden">
+    <div class="map-card settings-card">
+      <div class="map-header">
+        <div>
+          <h3>PENGATURAN GRAFIS</h3>
+          <small id="gfxInfo">Render --</small>
+        </div>
+        <button id="btnCloseSettings" class="map-close">✕</button>
+      </div>
+      <div class="settings-body">
+        <label class="set-row"><span>Resolusi</span>
+          <select id="selQuality">
+            <option value="auto">Auto (adaptif)</option>
+            <option value="hd">HD 1080p</option>
+            <option value="qhd">QHD 1440p</option>
+            <option value="uhd">4K 2160p</option>
+          </select>
+        </label>
+        <label class="set-row"><span>Bloom &amp; cahaya menyala</span><input type="checkbox" id="chkBloom" /></label>
+        <label class="set-row"><span>Color grading &amp; grain film</span><input type="checkbox" id="chkGrade" /></label>
+        <label class="set-row"><span>Aspal basah (pantulan)</span><input type="checkbox" id="chkWet" /></label>
+        <label class="set-row"><span>Tampilkan FPS</span><input type="checkbox" id="chkFps" /></label>
+        <p class="set-note">Auto menyesuaikan resolusi saat FPS turun. Balanced disarankan untuk HP/laptop; High untuk perangkat kuat; Ultra 4K hanya untuk GPU kelas atas. Tombol 🌅 mengganti waktu.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
