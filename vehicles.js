@@ -207,7 +207,17 @@ export class VehicleManager {
     }
   }
 
-  updateVehicle(car, dt, throttle, steerInput, brake) {
+  _carCollides(x, z, colliders) {
+    if (!colliders) return false;
+    const r = 1.65;
+    for (let i = 0; i < colliders.length; i++) {
+      const c = colliders[i];
+      if (x + r > c.minX && x - r < c.maxX && z + r > c.minZ && z - r < c.maxZ) return true;
+    }
+    return false;
+  }
+
+  updateVehicle(car, dt, throttle, steerInput, brake, colliders = null) {
     const maxSpeed = 36;
     if (throttle > 0) {
       car.speed = Math.min(car.speed + 20 * throttle * dt, maxSpeed);
@@ -243,8 +253,27 @@ export class VehicleManager {
 
       const forwardX = -Math.sin(car.group.rotation.y);
       const forwardZ = -Math.cos(car.group.rotation.y);
-      car.group.position.x += forwardX * car.speed * dt;
-      car.group.position.z += forwardZ * car.speed * dt;
+      const nextX = car.group.position.x + forwardX * car.speed * dt;
+      const nextZ = car.group.position.z + forwardZ * car.speed * dt;
+
+      if (!this._carCollides(nextX, nextZ, colliders)) {
+        car.group.position.x = nextX;
+        car.group.position.z = nextZ;
+      } else {
+        // Coba geser di sumbu X atau Z saja (sliding wall) agar mobil tidak nyangkut di tembok
+        if (!this._carCollides(nextX, car.group.position.z, colliders)) {
+          car.group.position.x = nextX;
+          car.speed *= 0.72;
+        } else if (!this._carCollides(car.group.position.x, nextZ, colliders)) {
+          car.group.position.z = nextZ;
+          car.speed *= 0.72;
+        } else {
+          // Benturan keras: hentikan & pantulkan sedikit
+          car.group.position.x -= forwardX * 0.25 * dirSign;
+          car.group.position.z -= forwardZ * 0.25 * dirSign;
+          car.speed = -car.speed * 0.28;
+        }
+      }
     }
 
     car.wheels.forEach((w) => {

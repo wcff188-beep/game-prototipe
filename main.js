@@ -6,7 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { World } from './world.js';
-import { PlayerController } from './characters.js';
+import { PlayerController, NPCManager } from './characters.js';
 import { VehicleManager } from './vehicles.js';
 
 // ---------- Penyimpanan pengaturan (aman jika localStorage diblokir) ----------
@@ -280,6 +280,7 @@ setTimeout(hideLoadingScreen, 4500);
 
 const world = new World(scene);
 const player = new PlayerController(scene, onAssetLoaded);
+const npcMgr = new NPCManager(scene, world);
 const vehicleMgr = new VehicleManager(scene, onAssetLoaded);
 
 let activeVehicle = null;
@@ -852,7 +853,7 @@ function animate() {
     if (steerRightHeld || keys['d'] || keys['arrowright']) steer -= 1;
 
     const brakeActive = handbrakeHeld || keys[' '];
-    vehicleMgr.updateVehicle(activeVehicle, dt, throttle, steer, brakeActive);
+    vehicleMgr.updateVehicle(activeVehicle, dt, throttle, steer, brakeActive, world.colliders);
     player.group.position.copy(activeVehicle.group.position);
 
     // Auto-follow kamera saat mengemudi maju ala OneState jika layar tidak sedang digeser manual

@@ -571,21 +571,34 @@ export class World {
 
         if ((ix === 0 && iz === 1) || (ix === -2 && iz === 1)) {
           this.create3DXeroGasStation(cx, cz, materials);
+          // Collider padat untuk bangunan toko SPBU & pilar kanopi
           this.colliders.push({
-            minX: cx - 12,
-            maxX: cx + 12,
-            minZ: cz - 11,
-            maxZ: cz + 3
+            minX: cx - 9.4,
+            maxX: cx + 9.4,
+            minZ: cz - 10.6,
+            maxZ: cz - 1.2
           });
+          for (const px of [-6.8, 6.8]) {
+            for (const pz of [2.5, 9.2]) {
+              this.colliders.push({
+                minX: cx + px - 0.7,
+                maxX: cx + px + 0.7,
+                minZ: cz + pz - 0.7,
+                maxZ: cz + pz + 0.7
+              });
+            }
+          }
         } else {
           const kind = archetypes[idx % archetypes.length];
           idx++;
-          this.buildModularBuilding(cx, cz, kind, materials);
+          const dims = this.buildModularBuilding(cx, cz, kind, materials);
+          const halfW = (dims ? dims.w : 26) / 2 + 0.35;
+          const halfD = (dims ? dims.d : 23) / 2 + 0.35;
           this.colliders.push({
-            minX: cx - 14,
-            maxX: cx + 14,
-            minZ: cz - 13,
-            maxZ: cz + 13
+            minX: cx - halfW,
+            maxX: cx + halfW,
+            minZ: cz - halfD,
+            maxZ: cz + halfD
           });
         }
 
@@ -908,6 +921,7 @@ export class World {
     g.position.set(cx, 0, cz);
     this.scene.add(g);
     this.buildingGroups.push(g);
+    return { w: cfg.podiumW, d: cfg.podiumD };
   }
 
   create3DXeroGasStation(cx, cz, m) {
